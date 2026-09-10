@@ -64,7 +64,7 @@ def mse_loss_and_grad(y_pred, y_true):
     dy_pred = (y_pred - y_true)
     loss = (dy_pred**2).mean()
 
-    return float(loss), (2 * dy_pred)/np.prod(y_pred.shape)
+    return float(loss), (2 * dy_pred)/np.prod(y_pred.shape).astype(dy_pred.dtype)
 
 # Step 7 - linear_backward
 import numpy as np
