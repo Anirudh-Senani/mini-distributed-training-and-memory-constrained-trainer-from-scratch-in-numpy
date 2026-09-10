@@ -123,8 +123,13 @@ def accumulate_gradients(accum_grads, new_grads):
 
     return out
 
-# Step 13 - scale_accumulated_gradients (not yet solved)
-# TODO: implement
+# Step 13 - scale_accumulated_gradients
+def scale_accumulated_gradients(accum_grads, num_micro_batches):
+    # TODO: divide each gradient tensor by num_micro_batches and return a new dict
+    for key in accum_grads:
+        accum_grads[key] /= num_micro_batches
+
+    return accum_grads
 
 # Step 14 - grad_accumulation_step (not yet solved)
 # TODO: implement
