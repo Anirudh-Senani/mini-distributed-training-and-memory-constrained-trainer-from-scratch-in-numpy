@@ -126,13 +126,26 @@ def accumulate_gradients(accum_grads, new_grads):
 # Step 13 - scale_accumulated_gradients
 def scale_accumulated_gradients(accum_grads, num_micro_batches):
     # TODO: divide each gradient tensor by num_micro_batches and return a new dict
+    out = {}
     for key in accum_grads:
-        accum_grads[key] /= num_micro_batches
+        out[key] = accum_grads[key]/num_micro_batches
 
-    return accum_grads
+    return out
 
-# Step 14 - grad_accumulation_step (not yet solved)
-# TODO: implement
+# Step 14 - grad_accumulation_step
+def grad_accumulation_step(x, y, params, micro_batch_size):
+    # TODO: run forward/backward on each micro batch and combine grads to match a full-batch step.
+    accum_grads = None
+    micro_batches = split_into_micro_batches(x, y, micro_batch_size)
+
+    for xb, yb in micro_batches:
+        y_pred, cache = mlp_forward(xb, params)
+        loss, dy_pred = mse_loss_and_grad(y_pred, yb)
+
+        new_grads = mlp_backward(dy_pred, cache, params)
+        accum_grads = accumulate_gradients(accum_grads, new_grads)
+
+    return scale_accumulated_gradients(accum_grads, len(micro_batches))
 
 # Step 15 - mlp_forward_checkpointed (not yet solved)
 # TODO: implement
