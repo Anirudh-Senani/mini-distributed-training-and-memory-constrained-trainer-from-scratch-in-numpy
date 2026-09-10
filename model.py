@@ -281,8 +281,20 @@ def compute_local_gradients(x, y, params):
     loss, dy_pred = mse_loss_and_grad(y_pred, y)
     return mlp_backward(dy_pred, cache, params)
 
-# Step 27 - all_reduce_mean (not yet solved)
-# TODO: implement
+# Step 27 - all_reduce_mean
+def all_reduce_mean(per_worker_grads):
+    # TODO: average a list of gradient dicts elementwise across workers
+    grads = {key:per_worker_grads[0][key].copy() for key in per_worker_grads[0]}
+    num_workers = len(per_worker_grads)
+
+    for worker_grad in per_worker_grads[1:]:
+        for key in grads:
+            grads[key] += worker_grad[key]
+
+    for key in grads:
+        grads[key] /= num_workers
+
+    return grads
 
 # Step 28 - ring_all_reduce_mean (not yet solved)
 # TODO: implement
