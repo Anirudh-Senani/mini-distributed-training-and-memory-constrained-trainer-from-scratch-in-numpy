@@ -267,8 +267,19 @@ def shard_dataset_across_workers(x, y, num_workers):
 
     return shards
 
-# Step 26 - compute_local_gradients (not yet solved)
-# TODO: implement
+# Step 26 - compute_local_gradients
+def compute_local_gradients(x, y, params):
+    """Compute parameter gradients for one worker's data shard.
+
+    Forward (mlp_forward) -> loss gradient (mse_loss_and_grad) -> backward
+    (mlp_backward). Return a grads dict with keys 'W1', 'b1', 'W2', 'b2'.
+    """
+    # TODO: forward, then mse loss gradient, then backward; return grads
+    y_pred, cache = mlp_forward(x, params)
+    # y_pred, light_cache = mlp_forward_checkpointed(x, params)
+    
+    loss, dy_pred = mse_loss_and_grad(y_pred, y)
+    return mlp_backward(dy_pred, cache, params)
 
 # Step 27 - all_reduce_mean (not yet solved)
 # TODO: implement
