@@ -44,8 +44,10 @@ def linear_forward(x, w, b):
     # TODO: apply y = x @ w + b and return the resulting (N, out_dim) array
     return x @ w + b
 
-# Step 4 - relu_forward (not yet solved)
-# TODO: implement
+# Step 4 - relu_forward
+def relu_forward(x):
+    # TODO: apply the ReLU activation elementwise and return an array of the same shape.
+    return np.maximum(x, 0.0)
 
 # Step 5 - mlp_forward (not yet solved)
 # TODO: implement
