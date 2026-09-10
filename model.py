@@ -77,8 +77,10 @@ def linear_backward(d_out, x, w):
 
     return dx, dw, db
 
-# Step 8 - relu_backward (not yet solved)
-# TODO: implement
+# Step 8 - relu_backward
+def relu_backward(d_out, z):
+    # TODO: backprop through ReLU using the pre-activation z, return dz with same shape.
+    return np.where(z>0, d_out, 0.0)
 
 # Step 9 - first_linear_backward (not yet solved)
 # TODO: implement
