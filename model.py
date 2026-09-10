@@ -87,8 +87,19 @@ def first_linear_backward(d_z1, x, w1):
     # TODO: return gradients (dx, dW1, db1) for z1 = x @ w1 + b1 given d_z1.
     return linear_backward(d_z1, x, w1)
 
-# Step 10 - mlp_backward (not yet solved)
-# TODO: implement
+# Step 10 - mlp_backward
+def mlp_backward(dy_pred, cache, params):
+    # TODO: run the full MLP backward pass returning grads dict with keys W1,b1,W2,b2
+    a1, w2, b2 = linear_backward(dy_pred, cache['a1'], params['W2'])
+    z1 = relu_backward(a1, cache['z1'])
+    x, w1, b1 = first_linear_backward(z1, cache['x'], params['W1'])
+
+    return dict(
+        W1=w1,
+        b1=b1,
+        W2=w2,
+        b2=b2
+    )
 
 # Step 11 - split_into_micro_batches (not yet solved)
 # TODO: implement
