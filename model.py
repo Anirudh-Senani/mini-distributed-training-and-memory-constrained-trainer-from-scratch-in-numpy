@@ -82,8 +82,10 @@ def relu_backward(d_out, z):
     # TODO: backprop through ReLU using the pre-activation z, return dz with same shape.
     return np.where(z>0, d_out, 0.0)
 
-# Step 9 - first_linear_backward (not yet solved)
-# TODO: implement
+# Step 9 - first_linear_backward
+def first_linear_backward(d_z1, x, w1):
+    # TODO: return gradients (dx, dW1, db1) for z1 = x @ w1 + b1 given d_z1.
+    return linear_backward(d_z1, x, w1)
 
 # Step 10 - mlp_backward (not yet solved)
 # TODO: implement
