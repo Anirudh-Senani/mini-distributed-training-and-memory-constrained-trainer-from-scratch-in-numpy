@@ -58,8 +58,13 @@ def mlp_forward(x, params):
 
     return z2, dict(x=x, z1=z1, a1=a1, z2=z2)
 
-# Step 6 - mse_loss_and_grad (not yet solved)
-# TODO: implement
+# Step 6 - mse_loss_and_grad
+def mse_loss_and_grad(y_pred, y_true):
+    # TODO: compute mean squared error loss and its gradient with respect to y_pred
+    dy_pred = (y_pred - y_true)
+    loss = (dy_pred**2).mean()
+
+    return float(loss), (2 * dy_pred)/np.prod(y_pred.shape)
 
 # Step 7 - linear_backward (not yet solved)
 # TODO: implement
