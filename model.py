@@ -101,8 +101,14 @@ def mlp_backward(dy_pred, cache, params):
         b2=b2
     )
 
-# Step 11 - split_into_micro_batches (not yet solved)
-# TODO: implement
+# Step 11 - split_into_micro_batches
+def split_into_micro_batches(x, y, micro_batch_size):
+    # TODO: split (x, y) into contiguous micro batches of at most micro_batch_size rows.
+    batches = []
+    for i in range(0, y.shape[0], micro_batch_size):
+        batches.append((x[i:i+micro_batch_size], y[i:i+micro_batch_size]))
+
+    return batches
 
 # Step 12 - accumulate_gradients (not yet solved)
 # TODO: implement
