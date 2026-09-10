@@ -168,8 +168,11 @@ def recompute_block_activations(x, params):
 
     return dict(x=x, z1=z1, a1=a1, z2=z2)
 
-# Step 17 - mlp_backward_checkpointed (not yet solved)
-# TODO: implement
+# Step 17 - mlp_backward_checkpointed
+def mlp_backward_checkpointed(dy_pred, light_cache, params):
+    # TODO: recompute activations from light_cache['x'] and run the standard MLP backward
+    cache = recompute_block_activations(light_cache['x'], params)
+    return mlp_backward(dy_pred, cache, params)
 
 # Step 18 - estimate_checkpointing_memory_savings (not yet solved)
 # TODO: implement
