@@ -138,7 +138,7 @@ def grad_accumulation_step(x, y, params, micro_batch_size):
     accum_grads = None
     micro_batches = split_into_micro_batches(x, y, micro_batch_size)
     N = x.shape[0]
-    num_micro_batches = len(micro_batches)
+    # num_micro_batches = len(micro_batches)
 
     for xb, yb in micro_batches:
         y_pred, cache = mlp_forward(xb, params)
