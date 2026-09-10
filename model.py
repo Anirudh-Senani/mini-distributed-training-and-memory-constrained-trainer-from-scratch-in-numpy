@@ -207,7 +207,7 @@ def make_master_params(params):
 # Step 21 - scale_loss
 def scale_loss(loss, dy_pred, scale):
     # TODO: Scale the scalar loss and the upstream gradient dy_pred by the fixed loss scale.
-    return loss*scale, dy_pred*scale
+    return loss*scale, dy_pred*np.array(scale, dtype=np.float32)
 
 # Step 22 - unscale_gradients
 def unscale_gradients(grads, scale):
@@ -229,8 +229,28 @@ def has_non_finite_gradients(grads):
 
     return non_finite
 
-# Step 24 - mixed_precision_step (not yet solved)
-# TODO: implement
+# Step 24 - mixed_precision_step
+def mixed_precision_step(x, y, master_params, scale, lr):
+    # TODO: run fp16 forward/backward, unscale grads, skip on overflow, else SGD-update fp32 master.
+    params = cast_to_half_precision(master_params)
+    x_half = x.astype(np.float16)
+    y_half = y.astype(np.float16)
+
+    y_pred, light_cache = mlp_forward_checkpointed(x_half, params)
+    loss, dy_pred = mse_loss_and_grad(y_pred, y_half)
+
+    loss_scaled, dy_pred_scaled = scale_loss(loss, dy_pred, scale)
+    grads_scaled = mlp_backward_checkpointed(dy_pred_scaled, light_cache, params)
+
+    grads = unscale_gradients(grads_scaled, scale)
+    if has_non_finite_gradients(grads):
+        return loss_scaled, make_master_params(master_params), True
+
+    new_master_params = {}
+    for key in master_params:
+        new_master_params[key] = master_params[key] - lr * grads[key]
+
+    return loss_scaled, make_master_params(new_master_params), False
 
 # Step 25 - shard_dataset_across_workers (not yet solved)
 # TODO: implement
