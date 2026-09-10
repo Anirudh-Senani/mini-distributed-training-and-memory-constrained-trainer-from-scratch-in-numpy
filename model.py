@@ -207,7 +207,7 @@ def make_master_params(params):
 # Step 21 - scale_loss
 def scale_loss(loss, dy_pred, scale):
     # TODO: Scale the scalar loss and the upstream gradient dy_pred by the fixed loss scale.
-    return loss*scale, dy_pred*np.array(scale, dtype=np.float32)
+    return loss*scale, dy_pred*np.array(scale, dtype=dy_pred.dtype)
 
 # Step 22 - unscale_gradients
 def unscale_gradients(grads, scale):
