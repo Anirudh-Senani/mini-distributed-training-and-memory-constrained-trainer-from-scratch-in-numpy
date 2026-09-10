@@ -16,7 +16,7 @@ def make_synthetic_regression_batch(batch_size, in_dim, out_dim, seed):
     np.random.seed(seed)
     x = np.random.randn(batch_size, in_dim)
     teacher = np.random.randn(in_dim, out_dim)
-    y = x @ teacher + np.random.standard_normal((1, out_dim)) * 0.02
+    y = x @ teacher + np.random.standard_normal((batch_size, out_dim)) * 0.1
 
     return x, y
 
@@ -137,15 +137,18 @@ def grad_accumulation_step(x, y, params, micro_batch_size):
     # TODO: run forward/backward on each micro batch and combine grads to match a full-batch step.
     accum_grads = None
     micro_batches = split_into_micro_batches(x, y, micro_batch_size)
+    N = x.shape[0]
+    num_micro_batches = len(micro_batches)
 
     for xb, yb in micro_batches:
         y_pred, cache = mlp_forward(xb, params)
         loss, dy_pred = mse_loss_and_grad(y_pred, yb)
 
         new_grads = mlp_backward(dy_pred, cache, params)
+        new_grads = scale_accumulated_gradients(new_grads, 1/xb.shape[0])
         accum_grads = accumulate_gradients(accum_grads, new_grads)
 
-    return scale_accumulated_gradients(accum_grads, len(micro_batches))
+    return scale_accumulated_gradients(accum_grads, N)
 
 # Step 15 - mlp_forward_checkpointed (not yet solved)
 # TODO: implement
