@@ -473,8 +473,15 @@ def compute_optimizer_memory_bytes(state, num_workers=1, sharded=False):
 
     return param_bytes*2
 
-# Step 38 - compute_peak_activation_memory_bytes (not yet solved)
-# TODO: implement
+# Step 38 - compute_peak_activation_memory_bytes
+def compute_peak_activation_memory_bytes(x, params, checkpointed=False):
+    # TODO: return total bytes of activations retained by the forward cache
+    if checkpointed:
+        _, cache = mlp_forward_checkpointed(x, params)
+    else:
+        _, cache = mlp_forward(x, params)
+
+    return compute_param_memory_bytes(cache)
 
 # Step 39 - compare_memory_with_and_without_optimizations (not yet solved)
 # TODO: implement
