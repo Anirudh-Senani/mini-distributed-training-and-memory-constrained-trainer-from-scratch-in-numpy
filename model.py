@@ -483,8 +483,27 @@ def compute_peak_activation_memory_bytes(x, params, checkpointed=False):
 
     return compute_param_memory_bytes(cache)
 
-# Step 39 - compare_memory_with_and_without_optimizations (not yet solved)
-# TODO: implement
+# Step 39 - compare_memory_with_and_without_optimizations
+def compare_memory_with_and_without_optimizations(x, params, num_workers):
+    # TODO: report baseline vs optimized per-worker memory (params, optimizer, activations) and savings ratio.
+    result = {}
+    adam_state = init_adam_state(params)
+    result['breakdown_baseline'] = {}
+    result['breakdown_baseline']['params'] = compute_param_memory_bytes(params)
+    result['breakdown_baseline']['optimizer'] = compute_optimizer_memory_bytes(adam_state, params)
+    result['breakdown_baseline']['activations'] = compute_peak_activation_memory_bytes(x, params)
+
+    result['baseline_bytes'] = result['breakdown_baseline']['params'] + result['breakdown_baseline']['optimizer'] + result['breakdown_baseline']['activations']
+
+    result['breakdown_optimized'] = {}
+    result['breakdown_optimized']['params'] = compute_param_memory_bytes(params)
+    result['breakdown_optimized']['optimizer'] = compute_optimizer_memory_bytes(adam_state, num_workers, True)
+    result['breakdown_optimized']['activations'] = compute_peak_activation_memory_bytes(x, params, True)
+
+    result['optimized_bytes'] = result['breakdown_optimized']['params'] + result['breakdown_optimized']['optimizer'] + result['breakdown_optimized']['activations']
+    result['savings_ratio'] = (result['baseline_bytes'] - result['optimized_bytes'])/result['baseline_bytes']
+
+    return result
 
 # Step 40 - full_distributed_training_loop (not yet solved)
 # TODO: implement
