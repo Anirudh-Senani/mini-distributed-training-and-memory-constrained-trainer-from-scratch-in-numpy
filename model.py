@@ -466,12 +466,12 @@ def compute_param_memory_bytes(params):
 # Step 37 - compute_optimizer_memory_bytes
 def compute_optimizer_memory_bytes(state, num_workers=1, sharded=False):
     # TODO: return per-worker bytes of Adam state (m and v), dividing by num_workers if sharded.
-    param_bytes = compute_param_memory_bytes(state['m'])
+    param_bytes = compute_param_memory_bytes(state['m']) * 2
 
     if sharded:
-        param_bytes //= num_workers
+        param_bytes = param_bytes//num_workers
 
-    return param_bytes*2
+    return param_bytes
 
 # Step 38 - compute_peak_activation_memory_bytes
 def compute_peak_activation_memory_bytes(x, params, checkpointed=False):
@@ -487,6 +487,9 @@ def compute_peak_activation_memory_bytes(x, params, checkpointed=False):
 def compare_memory_with_and_without_optimizations(x, params, num_workers):
     # TODO: report baseline vs optimized per-worker memory (params, optimizer, activations) and savings ratio.
     result = {}
+    for key in params:
+        params[key] = params[key].astype(x.dtype)
+
     adam_state = init_adam_state(params)
     result['breakdown_baseline'] = {}
     result['breakdown_baseline']['params'] = compute_param_memory_bytes(params)
