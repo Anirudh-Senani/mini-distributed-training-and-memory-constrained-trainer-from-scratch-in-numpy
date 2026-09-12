@@ -335,8 +335,37 @@ def data_parallel_train_step(x, y, params, num_workers, lr):
 
     return new_params
 
-# Step 30 - bucket_gradients (not yet solved)
-# TODO: implement
+# Step 30 - bucket_gradients
+def bucket_gradients(grads, bucket_size):
+    # TODO: pack flattened gradients into fixed-size buckets and return (buckets, meta).
+    bucket_id = 0
+    cur_bucket = []
+    cur_size = 0
+    # cur_meta = []
+    buckets = []
+    meta = []
+
+    for key in sorted(grads):
+        size = grads[key].size
+        if cur_size + size > bucket_size:
+            buckets.append(cur_bucket)
+            # meta.append(cur_meta)
+            bucket_id += 1
+            cur_size = grads[key].size
+            cur_bucket = grads[key].reshape(-1)
+            # cur_meta = [(key, grads[key].shape, 0, cur_size, bucket_id)]
+            meta.append((key, grads[key].shape, 0, cur_size, bucket_id))
+
+        else:
+            # cur_meta.append((key, grads[key].shape, cur_size, cur_size+size, bucket_id))
+            meta.append((key, grads[key].shape, cur_size, cur_size+size, bucket_id))
+            cur_bucket = np.concatenate([cur_bucket, grads[key].reshape(-1)])
+            cur_size += size
+
+    buckets.append(cur_bucket)
+    # meta.append(cur_meta)
+
+    return buckets, meta
 
 # Step 31 - init_adam_state (not yet solved)
 # TODO: implement
