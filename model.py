@@ -296,8 +296,33 @@ def all_reduce_mean(per_worker_grads):
 
     return grads
 
-# Step 28 - ring_all_reduce_mean (not yet solved)
-# TODO: implement
+# Step 28 - ring_all_reduce_mean
+def ring_all_reduce_mean(per_worker_arrays):
+    # TODO: average arrays across workers via ring reduce-scatter then all-gather over chunks.
+    N = len(per_worker_arrays)
+    shape = per_worker_arrays[0].shape
+    size = per_worker_arrays[0].size
+    chunk_size = (size + N -1)//N
+    out = []
+    for arr in per_worker_arrays:
+        out_i = np.zeros(N * chunk_size)
+        out_i[:size] = arr.ravel()
+        out.append(out_i.reshape((N, chunk_size)))
+
+    for s in range(N-1):
+        sends = [out[w][(w-s)%N].copy() for w in range(N)]
+        for w in range(N):
+            out[w][(w-s-1)%N] += sends[(w-1)%N]
+
+    for w in range(N):
+        out[w][(w+1)%N] /= N
+
+    for s in range(N-1):
+        sends = [out[w][(w+1-s)%N].copy() for w in range(N)]
+        for w in range(N):
+            out[w][(w-s)%N] = sends[(w-1)%N]
+
+    return out[0].reshape(-1)[:size].reshape(shape)
 
 # Step 29 - data_parallel_train_step (not yet solved)
 # TODO: implement
