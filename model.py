@@ -431,8 +431,22 @@ def all_gather_param_shards(param_shards_per_worker, shapes, shard_slices_per_wo
 
     return updated_params
 
-# Step 35 - zero_optimizer_step (not yet solved)
-# TODO: implement
+# Step 35 - zero_optimizer_step
+def zero_optimizer_step(params, grads, worker_states, lr=1e-3, beta1=0.9, beta2=0.999, eps=1e-8):
+    # TODO: run a full ZeRO step: each worker updates its shard, then all-gather rebuilds full params
+    updated_param_shards, updated_worker_states = [], []
+    shapes = worker_states[0]['shapes']
+    slices = []
+
+    for worker_state in worker_states:
+        ups, ws = local_shard_adam_update(params, grads, worker_state, lr, beta1, beta2, eps)
+        updated_param_shards.append(ups)
+        updated_worker_states.append(ws)
+        slices.append(ws['shard_slices'])
+
+    new_params = all_gather_param_shards(updated_param_shards, shapes, slices)
+
+    return new_params, updated_worker_states
 
 # Step 36 - compute_param_memory_bytes (not yet solved)
 # TODO: implement
