@@ -463,8 +463,15 @@ def compute_param_memory_bytes(params):
 
     return num_bytes
 
-# Step 37 - compute_optimizer_memory_bytes (not yet solved)
-# TODO: implement
+# Step 37 - compute_optimizer_memory_bytes
+def compute_optimizer_memory_bytes(state, num_workers=1, sharded=False):
+    # TODO: return per-worker bytes of Adam state (m and v), dividing by num_workers if sharded.
+    param_bytes = compute_param_memory_bytes(state['m'])
+
+    if sharded:
+        param_bytes //= num_workers
+
+    return param_bytes*2
 
 # Step 38 - compute_peak_activation_memory_bytes (not yet solved)
 # TODO: implement
