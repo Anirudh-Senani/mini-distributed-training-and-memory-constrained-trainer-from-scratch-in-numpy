@@ -414,8 +414,22 @@ def local_shard_adam_update(params, grads, worker_state, lr=1e-3, beta1=0.9, bet
 
     return updated_param_shards, updated_worker_state
 
-# Step 34 - all_gather_param_shards (not yet solved)
-# TODO: implement
+# Step 34 - all_gather_param_shards
+def all_gather_param_shards(param_shards_per_worker, shapes, shard_slices_per_worker):
+    # TODO: all-gather per-worker 1D parameter shards and restore original shapes.
+    updated_params = {}
+    num_workers = len(param_shards_per_worker)
+    for key in shapes:
+        size = np.prod(shapes[key])
+        # chunk_size = (size + num_workers - 1)//num_workers
+        param = np.zeros(size)
+        for i in range(num_workers):
+            start, end = shard_slices_per_worker[i][key]
+            param[start:end] = param_shards_per_worker[i][key]
+
+        updated_params[key] = param.reshape(shapes[key])
+
+    return updated_params
 
 # Step 35 - zero_optimizer_step (not yet solved)
 # TODO: implement
