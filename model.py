@@ -396,8 +396,23 @@ def partition_optimizer_state(state, num_workers):
 
     return workers
 
-# Step 33 - local_shard_adam_update (not yet solved)
-# TODO: implement
+# Step 33 - local_shard_adam_update
+def local_shard_adam_update(params, grads, worker_state, lr=1e-3, beta1=0.9, beta2=0.999, eps=1e-8):
+    # TODO: Apply an Adam update to only the local shard of each parameter using its owned moment shards.
+    updated_param_shards = {}
+    updated_worker_state = {'m':{}, 'v':{}, 't':worker_state['t']+1, 'shard_slices':worker_state['shard_slices'], 'shapes':worker_state['shapes']}
+
+    for key in params:
+        start, end = worker_state['shard_slices'][key]
+        updated_worker_state['m'][key] = beta1*worker_state['m'][key] + (1-beta1)*grads[key].reshape(-1)[start:end]
+        updated_worker_state['v'][key] = beta2*worker_state['v'][key] + (1-beta2)*(grads[key].reshape(-1)[start:end]**2)
+
+        m_hat = updated_worker_state['m'][key]/(1-beta1**updated_worker_state['t'])
+        v_hat = updated_worker_state['v'][key]/(1-beta2**updated_worker_state['t'])
+
+        updated_param_shards[key] = params[key].reshape(-1)[start:end] - lr*m_hat/(np.sqrt(v_hat)+eps)
+
+    return updated_param_shards, updated_worker_state
 
 # Step 34 - all_gather_param_shards (not yet solved)
 # TODO: implement
