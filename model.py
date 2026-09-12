@@ -487,8 +487,10 @@ def compute_peak_activation_memory_bytes(x, params, checkpointed=False):
 def compare_memory_with_and_without_optimizations(x, params, num_workers):
     # TODO: report baseline vs optimized per-worker memory (params, optimizer, activations) and savings ratio.
     result = {}
+    params_half = {}
     for key in params:
         params[key] = params[key].astype(x.dtype)
+        params_half[key] = params[key].astype(np.float16)
 
     adam_state = init_adam_state(params)
     result['breakdown_baseline'] = {}
@@ -499,7 +501,7 @@ def compare_memory_with_and_without_optimizations(x, params, num_workers):
     result['baseline_bytes'] = result['breakdown_baseline']['params'] + result['breakdown_baseline']['optimizer'] + result['breakdown_baseline']['activations']
 
     result['breakdown_optimized'] = {}
-    result['breakdown_optimized']['params'] = compute_param_memory_bytes(params)
+    result['breakdown_optimized']['params'] = compute_param_memory_bytes(params_half)
     result['breakdown_optimized']['optimizer'] = compute_optimizer_memory_bytes(adam_state, num_workers, True)
     result['breakdown_optimized']['activations'] = compute_peak_activation_memory_bytes(x, params, True)
 
