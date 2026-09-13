@@ -510,6 +510,93 @@ def compare_memory_with_and_without_optimizations(x, params, num_workers):
 
     return result
 
-# Step 40 - full_distributed_training_loop (not yet solved)
-# TODO: implement
+# Step 40 - full_distributed_training_loop
+def full_distributed_training_loop(x, y, num_workers=2, num_steps=10, micro_batch_size=8, lr=1e-3, hidden_dim=16, use_checkpointing=True, use_mixed_precision=True, use_zero=True, seed=0):
+    # TODO: run end-to-end distributed memory-aware training and return loss_history and final_params.
+    loss_history = []
+    forward = mlp_forward_checkpointed if use_checkpointing else mlp_forward
+    backward = mlp_backward_checkpointed if use_checkpointing else mlp_backward
+    scale = 1024.0 if use_mixed_precision else 1.0
+    stable_scale = 0
+    beta1 = 0.9
+    beta2 = 0.999
+    eps = 1e-8
+    in_dim = x.shape[-1]
+    out_dim = 1 if len(y.shape)==1 else y.shape[-1]
+    params = init_mlp_params(in_dim, hidden_dim, out_dim, seed)
+    master_params = make_master_params(params)
+    adam_state = init_adam_state(master_params)
+    if use_zero:
+        worker_states = partition_optimizer_state(adam_state, num_workers)
+
+    for _ in range(num_steps):
+        shards = shard_dataset_across_workers(x, y, num_workers)
+        step_loss = 0.0
+        per_worker_grads = []
+        for xs, ys in shards:
+            if use_mixed_precision:
+                params = cast_to_half_precision(master_params)
+                xs = xs.astype(np.float16)
+                ys = ys.astype(np.float16)
+            else:
+                params = master_params
+
+            accum_grads = None
+            for xb, yb in split_into_micro_batches(xs, ys, micro_batch_size):
+                y_pred, cache = forward(xb, params)
+                loss, dy_pred = mse_loss_and_grad(y_pred, yb)
+
+                if use_mixed_precision:
+                    loss, dy_pred = scale_loss(loss, dy_pred, scale)
+
+                step_loss += xb.shape[0] * loss
+                grads = backward(dy_pred, cache, params)
+
+                if use_mixed_precision:
+                    grads_unscaled = unscale_gradients(grads, scale)
+                    while has_non_finite_gradients(grads_unscaled):
+                        scale /= 2.0
+                        grads_unscaled = unscale_gradients(grads, scale)
+                        stable_scale = 0
+
+                    if stable_scale >= 5:
+                        scale *= 2.0
+                        stable_scale = 1
+                    grads = grads_unscaled
+
+                grads = scale_accumulated_gradients(grads, 1/xb.shape[0])
+                accum_grads = accumulate_gradients(accum_grads, grads)
+
+            grads = scale_accumulated_gradients(accum_grads, xs.shape[0])
+            per_worker_grads.append(grads)
+
+        # grads = all_reduce_mean(per_worker_grads)
+        grads = {}
+        for key in per_worker_grads[0].keys():
+            grads[key] = ring_all_reduce_mean([grad[key] for grad in per_worker_grads])
+
+        if use_zero:
+            master_params, worker_states = zero_optimizer_step(master_params, grads, worker_states, lr)
+
+        else:
+            adam_state['t'] += 1
+            new_params = {}
+            for key in master_params.keys():
+                adam_state['m'][key] = beta1 * adam_state['m'][key] + (1-beta1) * grads[key]
+                adam_state['v'][key] = beta2 * adam_state['v'][key] + (1-beta2) * grads[key]**2
+
+                m_hat = adam_state['m'][key]/(1-beta1**adam_state['t'])
+                v_hat = adam_state['v'][key]/(1-beta2**adam_state['t'])
+
+                new_params[key] = master_params[key] - lr * m_hat/(np.sqrt(v_hat)+eps)
+
+            master_params = new_params
+
+        stable_scale += 1
+        loss_history.append(step_loss/x.shape[0])
+
+    return dict(
+        loss_history=loss_history,
+        final_params=master_params
+    )
 
